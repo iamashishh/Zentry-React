@@ -1,31 +1,100 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Button from "./Button";
+import { TiLocationArrow } from "react-icons/ti";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+
+import { ScrollTrigger } from "gsap/all";
+gsap.registerPlugin(ScrollTrigger);
 
 const Hero = () => {
   const [currentIndex, setcurrentIndex] = useState(1);
-  const [isLoading, setisLoading] = useState(true);
   const [hasClicked, sethasClicked] = useState(false);
+
+  const [isLoading, setisLoading] = useState(true);
   const [loadedVideos, setloadedVideos] = useState(0);
 
   const totalVideos = 4;
   const nextVDRef = useRef(null);
 
-  const upcomingVideoIndex = (currentIndex % totalVideos) + 1;
+  useEffect(() => {
+    if (loadedVideos === totalVideos - 1) {
+      setisLoading(false);
+    }
+  }, [loadedVideos]);
 
   const handleMiniVDClick = () => {
     sethasClicked(true);
 
-    setcurrentIndex(upcomingVideoIndex);
+    setcurrentIndex((prevIndex) => (prevIndex % totalVideos) + 1);
   };
 
   const handleVideoLoaded = () => {
     setloadedVideos((prevCount) => prevCount + 1);
   };
 
-  const getVideoSrc = (index) => `/videos/hero-${index}.mp4`;
+  const getVideoSrc = (index) => `videos/hero-${index}.mp4`;
+
+  useGSAP(
+    () => {
+      if (hasClicked) {
+        gsap.set("#next-video", { visibility: "visible" });
+
+        gsap.to("#next-video", {
+          transformOrigin: "center center",
+          scale: 1,
+          width: "100%",
+          height: "100%",
+          duration: 1,
+          ease: "power1.inOut",
+          onStart: () => nextVDRef.current.play(),
+        });
+
+        gsap.from("#current-video", {
+          transformOrigin: "center center ",
+          scale: 0,
+          duration: 1.5,
+          ease: "power1.inOut",
+        });
+      }
+    },
+    {
+      dependencies: [currentIndex],
+      revertOnUpdate: true,
+    }
+  );
+
+  useGSAP(() => {
+    gsap.set("#video-frame", {
+      clipPath: "polygon(14% 0%, 72% 0%, 85% 90%, 0% 100%)",
+      borderRadius: "0 0 40% 10%",
+    });
+
+    gsap.from("#video-frame", {
+      clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+      borderRadius: "0 0 0 0",
+      ease: "power1.inOut",
+      scrollTrigger:{
+          trigger:"#video-frame",
+          start:"center center",
+          end:"bottom center",
+          scrub:true
+      }
+    });
+  }, []);
 
   return (
     <div className="relative w-screen  h-dvh overflow-x-hidden ">
+      {isLoading && (
+        <div className="flex-center absolute z-[100] h-dvh w-screen overflow-hidden bg-violet-50">
+          <div className="three-body ">
+            <div className="three-body__dot"></div>
+            <div className="three-body__dot"></div>
+            <div className="three-body__dot"></div>
+          </div>
+        </div>
+      )}
+
       <div
         id="video-frame"
         className="relative z-10 h-dvh w-screen overflow-hidden rounded-lg bg-blue-75 "
@@ -38,10 +107,9 @@ const Hero = () => {
             >
               <video
                 ref={nextVDRef}
-                src={getVideoSrc(upcomingVideoIndex)}
+                src={getVideoSrc((currentIndex % totalVideos) + 1)}
                 loop
                 muted
-                autoPlay
                 id="current-video"
                 className="size-64 origin-center scale-150 object-cover object-center "
                 onLoadedData={handleVideoLoaded}
@@ -50,10 +118,9 @@ const Hero = () => {
           </div>
 
           <video
-            // ref={nextVideoRef}
+            ref={nextVDRef}
             src={getVideoSrc(currentIndex)}
             loop
-            autoPlay
             muted
             id="next-video"
             className="absolute-center invisible absolute z-20 size-64 object-cover object-center "
@@ -63,32 +130,42 @@ const Hero = () => {
             src={getVideoSrc(
               currentIndex === totalVideos - 1 ? 1 : currentIndex
             )}
-            // autoPlay
+            autoPlay
             loop
             muted
             onLoadedData={handleVideoLoaded}
             className="absolute left-0 top-0 size-full object-cover object-center "
           />
         </div>
-        
-        <h1 className="special-font uppercase font-zentry  text-5xl sm:right-10 sm:text-7xl md:text-9xl lg:text-[12rem] absolute bottom-5 right-5 text-blue-75 z-40"
-        >G<b>a</b>ming </h1>
 
-        <div className="absolute left-0 top-0 z-40 size-full" >
-            <div className="mt-24 px-5 sm:px-10 " >
-                <h1 className="special-font text-blue-100 uppercase font-zentry font-black text-5xl  sm:right-10 sm:text-7xl md:text-9xl lg:text-[12rem];
-  " >
-                    redifi<b>n</b>e
-                </h1>
+        <h1 className="special-font uppercase font-zentry  text-5xl sm:right-10 sm:text-7xl md:text-9xl lg:text-[12rem] absolute bottom-5 right-5 text-blue-75 z-40">
+          G<b>a</b>ming{" "}
+        </h1>
 
-                <p className="mb-5 max-w-64 font-robert-regular text-blue-100" >
-                    Enter the Metagame Layer <br /> Unleash the Play Economy:
-                </p>
-                <Button id="watch-trailer" title="Watch Trailer" leftICon  />
-            </div>
+        <div className="absolute left-0 top-0 z-40 size-full">
+          <div className="mt-24 px-5 sm:px-10 ">
+            <h1
+              className="special-font text-blue-100 uppercase font-zentry font-black text-5xl  sm:right-10 sm:text-7xl md:text-9xl lg:text-[12rem];
+  "
+            >
+              redifi<b>n</b>e
+            </h1>
+
+            <p className="mb-5 max-w-64 font-robert-regular text-blue-100">
+              Enter the Metagame Layer <br /> Unleash the Play Economy:
+            </p>
+            <Button
+              id="watch-trailer"
+              title="Watch Trailer"
+              leftIcon={<TiLocationArrow />}
+              containerClass="bg-yellow-300 flex-center gap-1 "
+            />
+          </div>
         </div>
-
       </div>
+      <h1 className="special-font uppercase font-zentry  text-5xl sm:right-10 sm:text-7xl md:text-9xl lg:text-[12rem] absolute bottom-5 right-5  text-black ">
+        G<b>a</b>ming{" "}
+      </h1>
     </div>
   );
 };
